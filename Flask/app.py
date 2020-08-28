@@ -136,8 +136,8 @@ def prediction(review,weights_0_1=w01,weights_1_2=w12,vocab_size=vocab_size):
 def initialize():
     global_accuracy=0
     vocab_size=0
-    weights_0_1=np.zeros((vocab_size,hidden_nodes))
-    weights_1_2=np.random.normal(0.0,1,(hidden_nodes,1))
+    weights_0_1=np.zeros((vocab_size,10))
+    weights_1_2=np.random.normal(0.0,1,(10,1))
     word2index={}
     pickle.dump(global_accuracy,open('global_accuracy.txt','wb'))
     pickle.dump(vocab_size,open('vocab_size.txt','wb'))
