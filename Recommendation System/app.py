@@ -31,5 +31,5 @@ genreTable=genres_df.copy()
 genreTable.set_index('movieId',inplace=True)
 
 recommend_df=((genreTable*userProfile).sum(axis=1))/(userProfile.sum())
-recommend_df=((genreTable*userProfile).sum(axis=1))/(userProfile.sum())
+recommend_df.sort_values(ascending=False,inplace=True)
 print(recommend_df.head(5))
