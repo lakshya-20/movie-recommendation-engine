@@ -30,11 +30,9 @@ def initialize():
     print("movies data synchronized")
     return "Initialized"
 
-@app.route('/newReview')
-def newReview():
-    uid=1
-    movieId=42
-    rating=4
+@app.route('/newReview/<uid>/<movieId>/<rating>')
+def newReview(uid,movieId,rating):
+    rating=float(rating)
     mycol = mydb["reviews"]
     record={ "uid": uid, "movieId": movieId,"rating":rating }
     mycol.insert_one(record)
@@ -67,10 +65,11 @@ def newReview():
     x = mycol.insert_one(recommendation_data)
     return "Review added"
 
-@app.route('/recommendation')
-def recommendation():
+@app.route('/recommendation/<uid>')
+def recommendation(uid):
+    uid=int(uid)
     mycol = mydb["user_recommendation_data"]
-    x=mycol.find_one({"uid":1},{"_id":0})
+    x=mycol.find_one({"uid":uid},{"_id":0})
     data=x['recommendation_data']
     # recommend_df=pd.Series(data)
     # recommend_df.head()
