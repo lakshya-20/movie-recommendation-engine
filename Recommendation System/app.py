@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pymongo
 import itertools
-from flask import Flask,request, url_for, redirect, render_template
+from flask import Flask,request, url_for, redirect, render_template,jsonify
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["flick"]
@@ -85,9 +85,8 @@ def recommendation():
         if(str(i["movieId"]) in movies_id):
             movies_data.append(i)
         #print(i["movieId"])
-    movies_data=tuple(movies_data)
-    re=(1,2,3)
-    return "done"
+    
+    return jsonify(movies_data)
 
 if __name__=='__main__':
     app.run(debug=True)
