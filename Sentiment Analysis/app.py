@@ -40,7 +40,7 @@ vocab_size=pickle.load(open('vocab_size.txt','rb'))
 
 @app.route('/train') 
 def train(learning_rate=0.001,hidden_nodes=10,global_accuracy=global_accuracy):
-    
+    start_time=time.time()
     df=pd.read_csv('data.csv')
     reviews=df['Reviews'].tolist()
     labels=df['Labels'].tolist()
@@ -117,11 +117,17 @@ def train(learning_rate=0.001,hidden_nodes=10,global_accuracy=global_accuracy):
     else:
         print("Discarded")
         
-    return "Trained Model"
+    return "Trained Model and your modal took "+ str(time.time()-start_time)+" seconds to get trained."
 
 @app.route('/predict/<review>')    
-def prediction(review,weights_0_1=w01,weights_1_2=w12,vocab_size=vocab_size):
+def prediction(review):
+    weights_0_1=pickle.load(open('w01.txt','rb'))
+    weights_1_2=pickle.load(open('w12.txt','rb'))
+    w2i=pickle.load(open('w2i.txt','rb'))
+    vocab_size=pickle.load(open('vocab_size.txt','rb'))
     x=map_input(review,w2i,vocab_size)
+    print(x.shape)
+    print(weights_0_1)
     one_input=np.dot(x,weights_0_1)
     one_output=one_input
     two_input=np.dot(one_output,weights_1_2)
