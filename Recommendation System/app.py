@@ -60,14 +60,14 @@ def newReview(uid,movieId,rating):
     recommend_df.sort_values(ascending=False,inplace=True)
     mycol = mydb["user_recommendation_data"]
     recommendation_json=eval(recommend_df.to_json())
-    recommendation_data={"uid":1,"recommendation_data":recommendation_json}
+    recommendation_data={"uid":uid,"recommendation_data":recommendation_json}
     mycol.delete_one({"uid":uid})
     x = mycol.insert_one(recommendation_data)
     return "Review added"
 
 @app.route('/recommendation/<uid>')
 def recommendation(uid):
-    uid=int(uid)
+    #uid=int(uid)
     mycol = mydb["user_recommendation_data"]
     x=mycol.find_one({"uid":uid},{"_id":0})
     data=x['recommendation_data']
