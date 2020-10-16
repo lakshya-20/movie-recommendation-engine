@@ -91,13 +91,17 @@ def recommendation(uid):
     movies_id=list(data.keys())
 
     mycol=mydb['movies_data']
-
     movies_data=[]
-
     for i in mycol.find({},{"_id":0}):
         if(str(i["movieId"]) in movies_id):
             movies_data.append(i)
-        #print(i["movieId"])
+            
+            
+    mycol = mydb["posters_data"]
+    for movie in movies_data:
+        data=mycol.find_one({"movieId":str(movie.get('movieId'))},{"_id":0})
+        movie['poster']=data['poster']
+        movie['imdb_link']=data['imdb_link']
     
     return jsonify(movies_data)
 
