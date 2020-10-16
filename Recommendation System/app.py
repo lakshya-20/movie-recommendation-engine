@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import pymongo
 import itertools
+import csv
+import json
 from flask import Flask,request, url_for, redirect, render_template,jsonify
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -11,6 +13,18 @@ app=Flask(__name__)
 
 @app.route('/initialize')
 def initialize():
+    mycol=mydb["posters_data"]
+    mycol.drop()
+    csvfile = open('posters.csv', 'r')
+    reader = csv.DictReader( csvfile )
+    header=["movieId","imdb_link","poster"]
+    for each in reader:
+        row={}
+        for field in header:
+            row[field]=each[field]
+
+        mycol.insert_one(row)
+
     mycol = mydb["genres_data"]
     mycol.drop()
     genres_df=pd.read_csv('genres.csv')
