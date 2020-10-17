@@ -13,34 +13,26 @@ app=Flask(__name__)
 
 @app.route('/initialize')
 def initialize():
-    mycol=mydb["posters_data"]
-    mycol.drop()
-    csvfile = open('posters.csv', 'r')
-    reader = csv.DictReader( csvfile )
-    header=["movieId","imdb_link","poster"]
-    for each in reader:
-        row={}
-        for field in header:
-            row[field]=each[field]
-
-        mycol.insert_one(row)
-
-    mycol = mydb["genres_data"]
+    mycol = mydb["genres_datas"]
     mycol.drop()
     genres_df=pd.read_csv('genres.csv')
     genre_json=genres_df.to_json(orient='records')
     genre_json=eval(genre_json)
     genre_data=genre_json
     x = mycol.insert_many(genre_data)
-    print("genres data synchronized")
-    mycol = mydb["movies_data"]
+    print("Genres data synchronized")
+
+    mycol=mydb["movies_datas"]
     mycol.drop()
-    movies_df=pd.read_csv('movies.csv')
-    movies_json=movies_df.to_json(orient='records')
-    movies_json=eval(movies_json)
-    movies_data=movies_json
-    movies_data[0]
-    x = mycol.insert_many(movies_data)
+    csvfile = open('movies.csv', 'r',encoding='utf-8')
+    reader = csv.DictReader( csvfile )
+    header=["movieId","imdb_link","poster","title","imdb_score","genres"]
+    for each in reader:
+        row={}
+        for field in header:
+            row[field]=each[field]
+
+        mycol.insert_one(row)
     print("movies data synchronized")
     return "Initialized"
 
@@ -57,7 +49,7 @@ def newReview(uid,movieId,rating):
     userInput=pd.DataFrame(userInput)
     userInput=userInput.drop(['uid'], axis = 1) 
     #fetching genres data from database
-    mycol = mydb["genres_data"]
+    mycol = mydb["genres_datas"]
     data=[]
     for x in mycol.find({},{"_id":0}):
         data.append(x)
@@ -72,7 +64,7 @@ def newReview(uid,movieId,rating):
     genreTable.set_index('movieId',inplace=True)
     recommend_df=((genreTable*userProfile).sum(axis=1))/(userProfile.sum())
     recommend_df.sort_values(ascending=False,inplace=True)
-    mycol = mydb["user_recommendation_data"]
+    mycol = mydb["user_recommendation_datas"]
     recommendation_json=eval(recommend_df.to_json())
     recommendation_data={"uid":uid,"recommendation_data":recommendation_json}
     mycol.delete_one({"uid":uid})
@@ -82,7 +74,7 @@ def newReview(uid,movieId,rating):
 @app.route('/recommendation/<uid>')
 def recommendation(uid):
     #uid=int(uid)
-    mycol = mydb["user_recommendation_data"]
+    mycol = mydb["user_recommendation_datas"]
     x=mycol.find_one({"uid":uid},{"_id":0})
     data=x['recommendation_data']
     # recommend_df=pd.Series(data)
@@ -90,18 +82,11 @@ def recommendation(uid):
     data=dict(itertools.islice(data.items(),5))
     movies_id=list(data.keys())
 
-    mycol=mydb['movies_data']
+    mycol=mydb['movies_datas']
     movies_data=[]
     for i in mycol.find({},{"_id":0}):
         if(str(i["movieId"]) in movies_id):
             movies_data.append(i)
-            
-            
-    mycol = mydb["posters_data"]
-    for movie in movies_data:
-        data=mycol.find_one({"movieId":str(movie.get('movieId'))},{"_id":0})
-        movie['poster']=data['poster']
-        movie['imdb_link']=data['imdb_link']
     
     return jsonify(movies_data)
 
