@@ -4,12 +4,15 @@ import pymongo
 import itertools
 import csv
 import json
-from flask import Flask,request, url_for, redirect, render_template,jsonify
+from bson import json_util
+from flask import Flask,request, url_for, redirect, render_template,jsonify,Response
+from flask_cors import CORS, cross_origin
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["flick"]
 
 app=Flask(__name__)
+cors = CORS(app)
 
 @app.route('/initialize')
 def initialize():
@@ -39,6 +42,7 @@ def initialize():
 @app.route('/newReview/<uid>')
 def newReview(uid):
     mycol = mydb["reviews"]
+    print(uid)
     #record={ "uid": uid, "movieId": movieId,"rating":rating }
     #mycol.insert_one(record)
     #generating userInput table
@@ -68,26 +72,38 @@ def newReview(uid):
     recommendation_data={"uid":uid,"recommendation_data":recommendation_json}
     mycol.delete_one({"uid":uid})
     x = mycol.insert_one(recommendation_data)
-    return "Review added"
+    print("Review added")
+    return jsonify("Review added")
 
 @app.route('/recommendation/<uid>')
+@cross_origin()
 def recommendation(uid):
     #uid=int(uid)
+    print(uid)
     mycol = mydb["user_recommendation_datas"]
     x=mycol.find_one({"uid":uid},{"_id":0})
     data=x['recommendation_data']
     # recommend_df=pd.Series(data)
     # recommend_df.head()
-    data=dict(itertools.islice(data.items(),5))
+    data=dict(itertools.islice(data.items(),10))
     movies_id=list(data.keys())
 
     mycol=mydb['movies_datas']
     movies_data=[]
-    for i in mycol.find({},{"_id":0}):
+    for i in mycol.find({}):
         if(str(i["movieId"]) in movies_id):
             movies_data.append(i)
+    print("Returened data")
+    #return json_response(movies_data)
     
-    return jsonify(movies_data)
+    return Response(
+        json_util.dumps(movies_data),
+        mimetype='application/json'
+    )
+    
 
+
+def json_response(payload, status=200):
+    return (json.dumps(payload), status, {'content-type': 'application/json'})
 if __name__=='__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001, host="localhost")
