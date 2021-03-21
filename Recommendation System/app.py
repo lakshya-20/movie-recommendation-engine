@@ -4,12 +4,15 @@ import pymongo
 import itertools
 import csv
 import json
-from flask import Flask,request, url_for, redirect, render_template,jsonify
+from bson import json_util
+from flask import Flask,request, url_for, redirect, render_template,jsonify,Response
+from flask_cors import CORS, cross_origin
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["flick"]
 
 app=Flask(__name__)
+cors = CORS(app)
 
 @app.route('/initialize')
 def initialize():
@@ -20,7 +23,7 @@ def initialize():
     genre_json=eval(genre_json)
     genre_data=genre_json
     x = mycol.insert_many(genre_data)
-    print("Genres data synchronized")
+    print("Genres data synchronized "+str(mydb.genres_datas.count_documents({})))
 
     mycol=mydb["movies_datas"]
     mycol.drop()
@@ -31,23 +34,23 @@ def initialize():
         row={}
         for field in header:
             row[field]=each[field]
-
+        #print("Inserting a movie"+str(mycol.find().count()))    
         mycol.insert_one(row)
-    print("movies data synchronized")
+    print("movies data synchronized "+str(mydb.movies_datas.count_documents({})))
     return "Initialized"
 
-@app.route('/newReview/<uid>/<movieId>/<rating>')
-def newReview(uid,movieId,rating):
-    rating=float(rating)
+@app.route('/newReview/<uid>')
+def newReview(uid):
     mycol = mydb["reviews"]
-    record={ "uid": uid, "movieId": movieId,"rating":rating }
-    mycol.insert_one(record)
+    print(uid)
+    #record={ "uid": uid, "movieId": movieId,"rating":rating }
+    #mycol.insert_one(record)
     #generating userInput table
     userInput=[]
-    for x in mycol.find({"uid":uid},{ "_id": 0}):
+    for x in mycol.find({"userId":uid},{ "_id": 0}):
       userInput.append(x)
     userInput=pd.DataFrame(userInput)
-    userInput=userInput.drop(['uid'], axis = 1) 
+    userInput=userInput.drop(['userId','comment'], axis = 1) 
     #fetching genres data from database
     mycol = mydb["genres_datas"]
     data=[]
@@ -69,26 +72,38 @@ def newReview(uid,movieId,rating):
     recommendation_data={"uid":uid,"recommendation_data":recommendation_json}
     mycol.delete_one({"uid":uid})
     x = mycol.insert_one(recommendation_data)
-    return "Review added"
+    print("Review added")
+    return jsonify("Review added")
 
 @app.route('/recommendation/<uid>')
+@cross_origin()
 def recommendation(uid):
     #uid=int(uid)
+    print(uid)
     mycol = mydb["user_recommendation_datas"]
     x=mycol.find_one({"uid":uid},{"_id":0})
     data=x['recommendation_data']
     # recommend_df=pd.Series(data)
     # recommend_df.head()
-    data=dict(itertools.islice(data.items(),5))
+    data=dict(itertools.islice(data.items(),10))
     movies_id=list(data.keys())
 
     mycol=mydb['movies_datas']
     movies_data=[]
-    for i in mycol.find({},{"_id":0}):
+    for i in mycol.find({}):
         if(str(i["movieId"]) in movies_id):
             movies_data.append(i)
+    print("Returened data")
+    #return json_response(movies_data)
     
-    return jsonify(movies_data)
+    return Response(
+        json_util.dumps(movies_data),
+        mimetype='application/json'
+    )
+    
 
+
+def json_response(payload, status=200):
+    return (json.dumps(payload), status, {'content-type': 'application/json'})
 if __name__=='__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001, host="localhost")
