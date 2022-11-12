@@ -4,13 +4,13 @@ import pymongo
 import itertools
 import csv
 import json
+import os
 from bson import json_util
 from flask import Flask,request, url_for, redirect, render_template,jsonify,Response
 from flask_cors import CORS, cross_origin
 
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-#update mongodbURL for production
-mydb = myclient["flick"]
+mongo_client = pymongo.MongoClient(os.environ.get("MONGOURL"))
+mydb = mongo_client["flick"]
 
 app=Flask(__name__)
 cors = CORS(app)
