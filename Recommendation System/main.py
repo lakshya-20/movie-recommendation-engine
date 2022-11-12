@@ -60,17 +60,20 @@ def newReview(uid):
       userInput.append(x)
     userInput=pd.DataFrame(userInput)
     userInput=userInput.drop(['userId','comment'], axis = 1) 
+    print(userInput)
     #fetching genres data from database
     mycol = mydb["genres_datas"]
     data=[]
     for x in mycol.find({},{"_id":0}):
         data.append(x)
     genres_df=pd.DataFrame(data)
+    print(genres_df)
     #generating userProfile
     userGenre=genres_df[genres_df['movieId'].isin(userInput['movieId'].tolist())]
     userGenre.drop('movieId',1,inplace=True)
     userGenre.reset_index(drop=True)
     userProfile = userGenre.transpose().dot(userInput.rating.values)
+    print(userProfile)
     #getting new recommendations
     genreTable=genres_df.copy()
     genreTable.set_index('movieId',inplace=True)
@@ -80,7 +83,9 @@ def newReview(uid):
     recommendation_json=eval(recommend_df.to_json())
     recommendation_data={"uid":uid,"recommendation_data":recommendation_json}
     mycol.delete_one({"uid":uid})
+    print(recommendation_data)
     x = mycol.insert_one(recommendation_data)
+    print(x)
     print("Review added")
     return jsonify("Review added")
 
